@@ -27,6 +27,21 @@ public class Main {
         // 파일에서 읽어와 도로네트워크 생성
         RoadNetwork roadNetwork = fileIO.generateRoadNetwork();
 
+        ///////////// Transition probability matrix 구하기 (yh_tp)////////////////
+        int n = roadNetwork.getLinksSize();
+        double [][] tp_matrix = new double[n][n];
+        for (int i = 0; i < n;i++) {
+            // 여기에서 link[i]가 몇개의 link와 맞닿아있는지 int 변수 선언해서 저장
+            int m = roadNetwork.getLink(i).nextLinksNum(roadNetwork);
+            // 알고리즘대로 tp 지정
+            for (int j = 0; j < n; j++) {
+                if (i == j) tp_matrix[i][j] = 0.5;
+                else if (roadNetwork.getLink(i).isLinkNextTo(roadNetwork, j))
+                    tp_matrix[i][j] = 1.0/m;
+                else tp_matrix[i][j] = 0.0;
+            }
+        }
+
         // Link와 Node를 바탕으로 Adjacent List 구축
         ArrayList<AdjacentNode> heads = new ArrayList<>();
         for (int i = 0; i < roadNetwork.nodeArrayList.size(); i++) {
@@ -156,7 +171,7 @@ public class Main {
         // window size 입력받기
         System.out.print("Fixed Sliding Window Viterbi. Window size: \n");
         //Scanner scanner = new Scanner(System.in);
-        int wSize = 3; // window size;
+        int wSize = 9; // window size;
 
         ArrayList<Candidate[]> subpaths = new ArrayList<>();
         // arrOfCandidates를 순회하며 찾은 path의 마지막을 matching_success에 추가하는 loop
@@ -179,7 +194,7 @@ public class Main {
                     System.out.println("  nc: "+nc.getPoint()+"/ ep: "+nc.getEp());
                     // 현재 candidate를 하나씩 순회하며
                     for (Candidate cc : curr_candidates) {
-                        double tp = transition.Transition_pro(gpsPointArrayList.get(t-2).getPoint(), gpsPointArrayList.get(t).getPoint(), cc, nc, roadNetwork);
+                        double tp = tp_matrix[cc.getInvolvedLink().getLinkID()][nc.getInvolvedLink().getLinkID()];
                         double prob = tp * nc.getEp(); /*cc->nc로의 tp구해야하고 */
 
                         System.out.println("    cc: "+cc.getPoint()+"/ ep: "+cc.getEp()+ "/ tp: " + tp + "/ prob: "+nc.getEp()*tp);
